@@ -73,6 +73,15 @@ handles.ActiveFaceDepth = -5;       % plotted depth of active face - may need to
 handles.ActiveFaceScale = 5;   %factor by which to expand size of active face to make it more visible
 
 
+%load class list
+fprintf(1,'Select class list file\n');
+[filenameClass, pathname] = uigetfile({'*.txt'}, 'Select class list file');
+fullnameClass = fullfile(pathname, filenameClass);
+fid = fopen(fullnameClass,'r');
+C = textscan(fid,'%s')
+handles.popupmenu1.String = C{1};
+
+
 %load mesh
 fprintf(1,'Select mesh file in off format\n');
 [filenameMesh, pathname] = uigetfile({'*.off'}, 'Select mesh file in off format');
@@ -266,6 +275,17 @@ function pushbutton2_Callback(hObject, eventdata, handles)
 [filename, pathname] = uiputfile('*.txt','Save Annotation Data');
 fullname = fullfile(pathname,filename);
 fid = fopen(fullname, 'w');
+
+%first write class labeling scheme 
+classes = handles.popupmenu1.String;
+nc = size(classes,1);
+for i = 1:nc
+    fprintf(fid, '%s\t%d\n',classes{i},i);
+end
+
+fprintf(fid,'\n'); 
+
+% now print out annotation data
 classData = handles.classLabels;
 faces = handles.facesLabeled;
 xpos = handles.xpos;
