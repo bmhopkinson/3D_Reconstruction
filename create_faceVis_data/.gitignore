@@ -1,3 +1,6 @@
+# test data (ignore for now)
+test_data/
+image_list.txt
 # Windows default autosave extension
 *.asv
 
