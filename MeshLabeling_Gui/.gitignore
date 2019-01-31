@@ -1,3 +1,9 @@
+#ignore testing data (for now)
+test_data/
+
+#ignore gui handles file
+handles.mat
+
 # Windows default autosave extension
 *.asv
 
