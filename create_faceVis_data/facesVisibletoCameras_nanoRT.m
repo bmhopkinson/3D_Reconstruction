@@ -96,10 +96,13 @@ toc
 tic
 
 parfor j = 1:nCamAln
+    if isempty(visByCam{j})
+      continue;
+    end
 
     Fsub = F(visByCam{j},:);
     %remap vertices so only relevant vertices need to be passed
-    Vidx = Fsub(:);
+    Vidx = unique(Fsub(:));
     Vsub = V(Vidx,:);
 
     refInds = zeros(size(Vidx));
@@ -108,17 +111,23 @@ parfor j = 1:nCamAln
     end
     Fsub = refInds(Fsub);
 
+    if(size(visByCam{j},1) > 1) %in rare cases only one face is visible - it can't be blocked and passing a single face in messes up nanort_los_test
+        to_elim_cpp = nanort_los_test(single(Vsub),uint32(Fsub), single(Cam(j).camPos));
+        to_elim_cpp = double(to_elim_cpp) + 1 ; % change from zero based indexing to ones based and convert data type
 
-    to_elim_cpp = nanort_los_test(single(Vsub),uint32(Fsub), single(Cam(j).camPos));
-    to_elim_cpp = double(to_elim_cpp) + 1 ; % change from zero based indexing to ones based and convert data type
+        j_temp = visByCam{j};
+        x_temp = imCoordByCam_x{j};
+        y_temp = imCoordByCam_y{j};
 
-    j_temp = visByCam{j};
-    x_temp = imCoordByCam_x{j};
-    y_temp = imCoordByCam_y{j};
+        j_temp(to_elim_cpp) = [];
+        x_temp(to_elim_cpp) = [];
+        y_temp(to_elim_cpp) = [];
 
-    j_temp(to_elim_cpp) = [];
-    x_temp(to_elim_cpp) = [];
-    y_temp(to_elim_cpp) = [];
+      else    %only one face is visible - accept it
+        j_temp = visByCam{j};
+        x_temp = imCoordByCam_x{j};
+        y_temp = imCoordByCam_y{j};
+      end
 
     visByCam{j} = j_temp;
     imCoordByCam_x{j} = x_temp;
