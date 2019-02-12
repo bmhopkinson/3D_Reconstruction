@@ -1,8 +1,8 @@
 %create data structures that map faces to camera images and the points where they appear in those images
 
-addpath(genpath('~/Documents/MATLAB/Library/geom3d'));
+addpath(genpath('~/Documents/MATLAB/Library/matGeom/matGeom'));
 addpath('~/Documents/MATLAB/Library/xml');
-% 
+%
 % camFile  = '0441_simple_2_camera_agisoft.xml';
 % camVersion = 'v1.2';
 % meshFile = '0441_simple_2_model.off';
@@ -18,7 +18,7 @@ camVersion = 'v1.4';
 meshFile = './data/0441_simple_3_mesh.off';
 fileBase = './data/0441_simple_3';
 
-% 
+%
 % camFile = './data/crescent_reef_refined_20190129/crescent_reef_refined_20190129_cameras.xml';
 % camVersion = 'v1.4';
 % meshFile = './data/crescent_reef_refined_20190129/crescent_reef_refined_20190129_mesh.off';
@@ -32,4 +32,3 @@ fileBase = './data/0441_simple_3';
 
 outfile = strcat(fileBase,'_faceVisSparse.mat');
 save(outfile,'Fcenters','imCoord_x','imCoord_y','visibleFC','-v7.3');
-
