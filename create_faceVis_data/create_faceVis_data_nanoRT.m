@@ -36,7 +36,7 @@ SPLIT_MESH = 1;
 
 if SPLIT_MESH == 1
     depth = 2;
-    [Vsets, Fsets] = split_cameras_mesh(Cam, pCamCalib, V,F,depth);
+    [Vsets, Fsets] = split_cameras_mesh(Cam, pCamCalib, V,F,depth,fileBase);
 else
     Vsets{1} = V;
     Fsets{1} = F;
@@ -44,9 +44,15 @@ end
 
 n_groups = size(Vsets,2);
 
+%write out split meshes
+for i = 1:n_groups
+    fn_meshout = strcat(fileBase,'mesh_',num2str(i),'.off');
+    writeMesh_off(fn_meshout,Vsets{i},Fsets{i});
+end
+
 for i = 1:n_groups
     if SPLIT_MESH == 1
-     grp_infile = strcat('CameraGroup_',num2str(i),'.mat');
+     grp_infile = strcat(fileBase,'camGrp_',num2str(i),'.mat');
      load(grp_infile); %loads  'CamSub','pCamCalib','Vsub','Fsub'
      Cam = CamSub;
     else 

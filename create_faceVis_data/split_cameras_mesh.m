@@ -1,4 +1,4 @@
-function [Vsets_out, Fsets_out] = split_cameras_mesh(Cam, pCamCalib, V,F,depth)
+function [Vsets_out, Fsets_out] = split_cameras_mesh(Cam, pCamCalib, V,F,depth, fileBase)
 
 
 %group cameras spatially (e.g. aabb tree) then split mesh into exclusive
@@ -303,7 +303,7 @@ for i = 1:n_groups
     
     Fsub = refInds(Fsub);
     CamSub = Cam(camGroups_mj{i}); 
-    outfile = strcat('CameraGroup_',num2str(i),'.mat');
+    outfile = strcat(fileBase,'camGrp_',num2str(i),'.mat');
     save(outfile, 'CamSub','pCamCalib','Vsub','Fsub','-v7.3');
     
     Fsets_out{i} = Fsub;
