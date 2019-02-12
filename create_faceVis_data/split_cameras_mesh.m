@@ -1,9 +1,9 @@
 function [Vsets_out, Fsets_out] = split_cameras_mesh(Cam, pCamCalib, V,F,depth, fileBase)
 
-
+addpath(genpath('/home/cv-bhlab/Documents/MATLAB/Library/3D_Reconstruction/mesh_utils'));  %read agisoft camera files, projects points etc
 %group cameras spatially (e.g. aabb tree) then split mesh into exclusive
 %groups of faces associated with camera groups
-% 
+%
 % overall approach is:
 % 1. group cameras spatially using aabb tree - at two levels: major groups,
 % minor groups
@@ -39,11 +39,11 @@ for i=1:depth
     children = [];
     for j = 1:size(parents,2)
         c1 = tr.ii(parents(j),2);  %first child
-        c2 = c1 + 1;  %second child 
+        c2 = c1 + 1;  %second child
         children = [children, c1, c2];
     end
     parents = children;
-    
+
 end
 
 major_groups = parents;
@@ -59,21 +59,21 @@ minor_to_major.major = [];
 minor_to_major.minor = [];
 for i = 1:n_groups
   parents = major_groups(i);  %starting node - major_group id
-  
+
   for j=1:minor_depth
     children = [];
     for k = 1:size(parents,2)
         c1 = tr.ii(parents(k),2);  %first child
         if c1 == 0  %leaf node
-           children =[children, parents(k)]; %don't descend, reappend leaf node 
+           children =[children, parents(k)]; %don't descend, reappend leaf node
            continue;
         else
-           c2 = c1 + 1;  %second child 
+           c2 = c1 + 1;  %second child
            children = [children, c1, c2]; %append new nodes
         end
     end
     parents = children;
-    
+
   end
   minor_groups{i} = parents;
   minor_to_major.major = [minor_to_major.major i*ones(1,size(parents,2))];
@@ -86,40 +86,40 @@ for i=1:n_groups
    parents = minor_groups{i};
    n_minor = size(parents,2);
    camGrp_minor = {};
-   
+
    for j = 1:n_minor
     this_parent = parents(j);
     queue.data = this_parent;
     queue.head = 1;
     queue.tail = 2;
-    
+
     camIDs = [];
-    
+
     while(queue.head < queue.tail)
       nc = queue.data(queue.head); %current node
       queue.head =queue.head+1;
-      
+
       if(tr.ii(nc,2) == 0)   %leaf node (no children); append cameras
         camIDs = [camIDs ; tr.ll{nc}];
       else %not a leaf node - append to queue for descent
         c1 = tr.ii(nc,2);  %first child node of binary tree;
-        c2 = c1 + 1;      %second child node is always 1 below 
+        c2 = c1 + 1;      %second child node is always 1 below
         cnodes = [c1 c2];
         queue.data = [queue.data, cnodes];
         queue.tail = queue.tail + 2;
       end
-      
+
     end  %end while for queue processing
     camGroups{i,j} = camIDs;
    end %end loop on minor groups
-   
+
 end %end for on major groups
 toc
 fprintf(1,'done defining camera groups\n');
 
 %% 2. determine vertices and faces relevant to each camera group
 tic;
-%create aabb tree on faces 
+%create aabb tree on faces
 bl = V(F(:,1),:); %lower bound of aabb box - initialize to values of 1st vertex
 bu = V(F(:,1),:); %upper bound of aabb box - initialize to values of 1st vertex
 
@@ -130,7 +130,7 @@ end
 
 tr_faces = maketree([bl, bu]);  % from D. Engwirda's aabb tree matlab library
 
-Fsets = {}; 
+Fsets = {};
 visByCam_group = {};
 
 %do this on minor groups
@@ -138,21 +138,21 @@ n_minor = size(camGroups,2);
 for i=1:n_groups
 
     for j = 1:n_minor
-      if(isempty(camGroups{i,j})) 
-          continue; 
+      if(isempty(camGroups{i,j}))
+          continue;
       end
       %determine which faces are potentially visible in the camera group
-      this_Cam = Cam(camGroups{i,j});    
+      this_Cam = Cam(camGroups{i,j});
       [visByCam, ~, ~] = projectFacesToCams(this_Cam,pCamCalib, V,F, tr_faces,'Dist_Threshold',2.0);
       visByCam_group{i,j} = visByCam;
-    
+
       Frel =[];
       for k = 1:size(visByCam,2)
          Frel = union(Frel,visByCam{k});
       end
       Fsets{i,j}= Frel;
     end  %end loop on n_minor
-    
+
 end  %end loop on n_groups
 toc
 fprintf(1,'done projecting faces into camera\n');
@@ -175,12 +175,12 @@ all_shared = [];
 for i = 1:tot_minor
     i_mj = minor_to_major.major(i);  %outer loop indices
     i_mi = minor_to_major.minor(i);
-    
+
     for j = i:tot_minor  %inner loop
-        
+
         j_mj = minor_to_major.major(j);  %inner loop indices
         j_mi = minor_to_major.minor(j);
-        
+
         if i_mj == j_mj
             continue;
         end
@@ -190,9 +190,9 @@ for i = 1:tot_minor
         edgeStrength(j,i) = n_shared;
         sharedEdges{i,j}  = shared; %only store in one entry to conserve memory
         all_shared = union(all_shared,shared);
-        
+
     end %end inner loop
-    
+
 end  %end outer loop
 
 
@@ -204,47 +204,47 @@ edge_rank = 1;
 camGroups_aug = camGroups; %augmented camera groups resulting from face partitioning - start with original groups and then augment
 while(~isempty(all_shared))
     for i = 1:tot_minor
-       [~,ranked_idx] = sort(edgeStrength(i,:),'descend');  %find camGroup that this group shared 'edge_rank'th overlap with 
+       [~,ranked_idx] = sort(edgeStrength(i,:),'descend');  %find camGroup that this group shared 'edge_rank'th overlap with
        merge_idx = ranked_idx(edge_rank);
        if(i<merge_idx)   %get those shared faces
-           shared = sharedEdges{i,merge_idx};  
+           shared = sharedEdges{i,merge_idx};
        else
            shared = sharedEdges{merge_idx,i};
        end
-       
+
        %pull out major, minor indices of n_minor and merge_idx group
        o_mj = minor_to_major.major(i);  %new owner indices
        o_mi = minor_to_major.minor(i);
        s_mj = minor_to_major.major(merge_idx); %loser indices
        s_mi = minor_to_major.minor(merge_idx);
-       
+
        [available,~,idx_as]  = intersect(shared,all_shared);  %determine which faces have not been allocated - i.e. still available for assignment
-       
+
        if(~isempty(available))  %add cameras of camGroup to be merged to new owner's camGroup
            temp_s = camGroups_aug{s_mj, s_mi};  %extract cameras of loser
            temp_o = camGroups_aug{o_mj, o_mi};
-           
+
            new_cams = unique([temp_o; temp_s]);
-           
-           camGroups_aug{o_mj, o_mi} = new_cams;  
+
+           camGroups_aug{o_mj, o_mi} = new_cams;
        end
-       
+
        for j = 1:n_groups   %remove faces from all other sets (effectively merging them into camGroup{i})
            if o_mj == j % if in the same major group do nothing
-             continue; 
-             
-           else  % if in a different major group, remove 'available' faces 
+             continue;
+
+           else  % if in a different major group, remove 'available' faces
 
              n_j = size(Fsets,2);
              for k = 1:n_j
                 Fsets{j,k}  = setdiff(Fsets{j,k}, available);
              end
-             
+
            end
        end  %and loop on major groups
- 
+
        all_shared(idx_as) = [];
-       
+
     end %end for loop on groups
     edge_rank = edge_rank + 1;
 end  %end while loop on all_shared
@@ -281,39 +281,39 @@ for i=1:n_groups
     for j=1:n_minor
         F_major = unique([F_major; Fsets{i,j}]);
         cam_major = unique([cam_major; camGroups_aug{i,j}]);
-        
+
     end
     Fsets_mj{i} = F_major;
     camGroups_mj{i} = cam_major;
 
 end
-% 
+%
 % remap faces and vertices for split mesh sections
 
 for i = 1:n_groups
-    Fsub = F(Fsets_mj{i},:); 
+    Fsub = F(Fsets_mj{i},:);
     %remap vertex indices in faces
     Vidx = unique(Fsub(:));
     Vsub = V(Vidx,:);
-    
+
     refInds = zeros(size(Vidx));
     for k = 1:length(Vidx)
         refInds(Vidx(k))= k;
     end
-    
+
     Fsub = refInds(Fsub);
-    CamSub = Cam(camGroups_mj{i}); 
+    CamSub = Cam(camGroups_mj{i});
     outfile = strcat(fileBase,'camGrp_',num2str(i),'.mat');
     save(outfile, 'CamSub','pCamCalib','Vsub','Fsub','-v7.3');
-    
+
     Fsets_out{i} = Fsub;
     Vsets_out{i} = Vsub;
-    
+
 end
 
 
-% 
-%% plot results 
+%
+%% plot results
 %  multiple plots
 colors = {'r','g','b','c','m','y'};
 for i = 1:n_groups
@@ -342,4 +342,3 @@ end
 
 
 end
-
