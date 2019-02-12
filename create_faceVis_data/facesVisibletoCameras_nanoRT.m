@@ -43,51 +43,9 @@ end
 tr = maketree([bl, bu]);  % from D. Engwirda's aabb tree matlab library
 %% use aabb tree to determine faces relevant to each camera
 % and then project those face centers using full camera moError using containers.
-
-visByCam = {};
-imCoordByCam_x = {};
-imCoordByCam_y = {};
 tic;
-parfor j = 1:nCamAln
+[visByCam, imCoordByCam_x, imCoordByCam_y] = projectFacesToCams(Cam,pCamCalib, V,F, tr);
 
-    Frel = find_relevant_faces(Cam(j).Tinv, pCamCalib(Cam(j).sensor_id), tr);
-    if isempty(Frel)
-      continue;
-    end
-
-    Fcsub = Fcenters(Frel,:);
-    nFcsub = size(Fcsub,1);
-
-    nv_cam = 0;
-    j_vis_cam = zeros(nFcsub,1);
-    x_cam = zeros(nFcsub,1);
-    y_cam = zeros(nFcsub,1);
-    w = pCamCalib(Cam(j).sensor_id).width;
-    h = pCamCalib(Cam(j).sensor_id).height;
-
-    for i = 1:nFcsub
-        [x,y, x_pinhole, y_pinhole] = projectPointToCamera(Fcsub(i,:), Cam(j).Tinv, pCamCalib(Cam(j).sensor_id));
-        if(x_pinhole > -0.3*w && x_pinhole < 1.3*w && y_pinhole > -0.3*h && y_pinhole < 1.3*h) %use pinhole projection as sanity check, nonlinear corrections can erroneously project locations way outside of field of view into the image
-            if(x > 0 && x < w && y > 0 && y < h)
-              nv_cam = nv_cam+1; %increment total number of views
-              % add values to index vectors for visibleFC matrix
-              j_vis_cam(nv_cam) = Frel(i);
-              x_cam(nv_cam) = x;
-              y_cam(nv_cam) = y;
-
-            end
-        end %end pinhole sanity checksave('
-    end  %end loop on faces
-
-    if nv_cam ==0   %no faces seen
-      continue;
-    end
-
-    visByCam{j} = j_vis_cam(1:nv_cam);
-    imCoordByCam_x{j} = x_cam(1:nv_cam);
-    imCoordByCam_y{j} = y_cam(1:nv_cam);
-
-end %end loop on cameras
 fprintf(1,'finished aabb tree testing\n');
 toc
 % save('checkpoint.mat');
