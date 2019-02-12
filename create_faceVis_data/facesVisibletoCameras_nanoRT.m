@@ -1,4 +1,4 @@
-function [Fcenters, visibleFC, imCoord_x, imCoord_y ] = facesVisibletoCameras_nanoRT(cameraFile, camVersion, V, F, fileBase)
+function [Fcenters, visibleFC, imCoord_x, imCoord_y ] = facesVisibletoCameras_nanoRT(Cam, pCamCalib, V, F,fileBase)
 
 addpath(genpath('/home/cv-bhlab/Documents/MATLAB/Library/3D_Reconstruction/mesh_utils'));  %read agisoft camera files, projects points etc
 %determine which points on a mesh are visible in cameras based on
@@ -7,15 +7,14 @@ addpath(genpath('/home/cv-bhlab/Documents/MATLAB/Library/3D_Reconstruction/mesh_
 %addpath(genpath('/home/brian/Documents/MATLAB/Library/geom3d'));
 %addpath('../Common');
 PHOTO_PATH_PREFIX = './data/photos/';
-PHOTO_EXT = '.png';
+PHOTO_EXT = '';
 %% Load Cameras %%
-
-[Cam, pCamCalib] = loadCameraData(cameraFile,camVersion);
 
 nCamAln = size(Cam,2);
 
 %export image list file
-imlist = fopen('image_list.txt','w');
+fn_imagelist = strcat(fileBase,'image_list.txt');
+imlist = fopen(fn_imagelist,'w');
 for i = 1: nCamAln
     img_path = strcat(PHOTO_PATH_PREFIX, Cam(i).label, PHOTO_EXT);
     fprintf(imlist,'%s\n', img_path);
@@ -77,7 +76,7 @@ parfor j = 1:nCamAln
               y_cam(nv_cam) = y;
 
             end
-        end %end pinhole sanity check
+        end %end pinhole sanity checksave('
     end  %end loop on faces
 
     if nv_cam ==0   %no faces seen
@@ -91,43 +90,45 @@ parfor j = 1:nCamAln
 end %end loop on cameras
 fprintf(1,'finished aabb tree testing\n');
 toc
-
+% save('checkpoint.mat');
+%load('checkpoint.mat');
 %% check for line of sight using nanoRT based bounding-volume hierarchy
 tic
 
 parfor j = 1:nCamAln
     if isempty(visByCam{j})
-      continue;
+        continue;
     end
 
     Fsub = F(visByCam{j},:);
     %remap vertices so only relevant vertices need to be passed
-    Vidx = unique(Fsub(:));
+    Vidx = Fsub(:);
     Vsub = V(Vidx,:);
 
     refInds = zeros(size(Vidx));
-    for k = 1:length(Vidx)
+    for k = 1:size(Vidx,1)
         refInds(Vidx(k))= k;
     end
     Fsub = refInds(Fsub);
 
     if(size(visByCam{j},1) > 1) %in rare cases only one face is visible - it can't be blocked and passing a single face in messes up nanort_los_test
-        to_elim_cpp = nanort_los_test(single(Vsub),uint32(Fsub), single(Cam(j).camPos));
-        to_elim_cpp = double(to_elim_cpp) + 1 ; % change from zero based indexing to ones based and convert data type
+      to_elim_cpp = nanort_los_test(single(Vsub),uint32(Fsub), single(Cam(j).camPos));
+      to_elim_cpp = double(to_elim_cpp) + 1 ; % change from zero based indexing to ones based and convert data type
 
-        j_temp = visByCam{j};
-        x_temp = imCoordByCam_x{j};
-        y_temp = imCoordByCam_y{j};
+      j_temp = visByCam{j};
+      x_temp = imCoordByCam_x{j};
+      y_temp = imCoordByCam_y{j};
 
-        j_temp(to_elim_cpp) = [];
-        x_temp(to_elim_cpp) = [];
-        y_temp(to_elim_cpp) = [];
+      j_temp(to_elim_cpp) = [];
+      x_temp(to_elim_cpp) = [];
+      y_temp(to_elim_cpp) = [];
 
-      else    %only one face is visible - accept it
-        j_temp = visByCam{j};
-        x_temp = imCoordByCam_x{j};
-        y_temp = imCoordByCam_y{j};
-      end
+    else    %only one face is visible - accept it
+      j_temp = visByCam{j};
+      x_temp = imCoordByCam_x{j};
+      y_temp = imCoordByCam_y{j};
+    end
+
 
     visByCam{j} = j_temp;
     imCoordByCam_x{j} = x_temp;

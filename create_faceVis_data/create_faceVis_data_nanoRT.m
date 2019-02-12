@@ -2,33 +2,34 @@
 
 addpath(genpath('~/Documents/MATLAB/Library/geom3d'));
 addpath('~/Documents/MATLAB/Library/xml');
-%
-camFile = './test_data/crescent_reef_refined_2017/crescent_reef_refined_20190125_cameras.xml';
+% 
+% camFile  = '0441_simple_2_camera_agisoft.xml';
+% camVersion = 'v1.2';
+% meshFile = '0441_simple_2_model.off';
+% fileBase = '0441_simple_2_';
+
+% camFile  = './data/Crescent_simple_cameras.xml';
+% camVersion = 'v1.4';
+% meshFile = './data/Crescent_simple_mesh.off';
+% fileBase = './data/Crescent_simple';
+
+camFile  = './data/0441_simple_3_cameras.xml';
 camVersion = 'v1.4';
-meshFile = './test_data/crescent_reef_refined_2017/crescent_reef_refined_20190125_mesh.off';
-fileBase = './test_data/crescent_reef_refined_2017/crescent_reef_refined_20190125';
+meshFile = './data/0441_simple_3_mesh.off';
+fileBase = './data/0441_simple_3';
 
-% camFile  = './test_data/crescent_simple/Crescent_simple_cameras.xml';
+% 
+% camFile = './data/crescent_reef_refined_20190129/crescent_reef_refined_20190129_cameras.xml';
 % camVersion = 'v1.4';
-% meshFile = './test_data/crescent_simple/Crescent_simple_mesh.off';
-% fileBase = './test_data/crescent_simple/Crescent_simple';
-
-% camFile  = './data/0441_simple_3_cameras.xml';
-% camVersion = 'v1.4';
-% meshFile = './data/0441_simple_3_mesh.off';
-% fileBase = './data/0441_simple_3';
-
-%
-% camFile = './test_data/crescent_reef_refined_20190129/crescent_reef_refined_20190129_cameras.xml';
-% camVersion = 'v1.4';
-% meshFile = './test_data/crescent_reef_refined_20190129/crescent_reef_refined_20190129_mesh.off';
-% fileBase = './test_data/crescent_reef_refined_20190129/crescent_reef_refined_20190129';
+% meshFile = './data/crescent_reef_refined_20190129/crescent_reef_refined_20190129_mesh.off';
+% fileBase = './data/crescent_reef_refined_20190129/crescent_reef_refined_20190129';
 
 
 
 [V, F] = readMesh_off(meshFile);
-
-[Fcenters, visibleFC, imCoord_x, imCoord_y ] = facesVisibletoCameras_nanoRT(camFile, camVersion, V, F, fileBase);
+[Cam, pCamCalib] = loadCameraData(camFile,camVersion);
+[Fcenters, visibleFC, imCoord_x, imCoord_y ] = facesVisibletoCameras_nanoRT(Cam, pCamCalib, V, F, fileBase);
 
 outfile = strcat(fileBase,'_faceVisSparse.mat');
 save(outfile,'Fcenters','imCoord_x','imCoord_y','visibleFC','-v7.3');
+
