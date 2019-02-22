@@ -43,7 +43,7 @@ nCams = size(Cam,2);
 
 parfor j = 1:nCams
     
-    Frel = find_relevant_faces(Cam(j).Tinv, pCamCalib(Cam(j).sensor_id), tr);
+    [Frel,~] = find_relevant_faces(Cam(j).Tinv, pCamCalib(Cam(j).sensor_id), tr);
     
     Fcsub = Fcenters(Frel,:);
     nFcsub = size(Fcsub,1);

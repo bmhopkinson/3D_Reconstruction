@@ -1,5 +1,6 @@
-function [Frel] = find_relevant_faces(T, calib, tr)
+function [Frel, node_rel] = find_relevant_faces(T, calib, tr)
 %find faces that potentially project into the camera (T - camera transfor, calib - camera calibration)
+% also return relavant node ids in node_rel
 %accelerated with the aid aabb tree (tr);
  BUFF = 0.1; %fraction of width and height to allow as a buffer for considering points to be sufficiently close to examine further
  
@@ -15,6 +16,7 @@ function [Frel] = find_relevant_faces(T, calib, tr)
  queue.head = 1; 
  queue.tail = 2;
  Frel = []; %relevant faces
+ node_rel = []; %relevant node ids
  
  while(queue.head < queue.tail)
    i = queue.data(queue.head);
@@ -22,6 +24,7 @@ function [Frel] = find_relevant_faces(T, calib, tr)
 
    if(tr.ii(i,2) == 0)   %leaf node (no children); append faces to consider later
       Frel = [Frel ; tr.ll{i}];
+      node_rel = [node_rel, i];
    else %not a leaf node - see if children should be considered
       c1 = tr.ii(i,2);  %first child node of binary tree;
       c2 = c1 + 1;      %second child node is always 1 below 
