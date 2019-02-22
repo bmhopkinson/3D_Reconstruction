@@ -2,11 +2,12 @@
 
 addpath(genpath('~/Documents/MATLAB/Library/matGeom/matGeom'));
 addpath('~/Documents/MATLAB/Library/xml');
-% 
-% camFile  = '0441_simple_2_camera_agisoft.xml';
-% camVersion = 'v1.2';
-% meshFile = '0441_simple_2_model.off';
-% fileBase = '0441_simple_2_';
+addpath('~/Documents/MATLAB/3D_Reconstruction/mesh_utils');
+
+% camFile  = './data/hog_reef/hog_reef_20190108_cameras.xml';
+% camVersion = 'v1.4';
+% meshFile = './data/hog_reef/hog_reef_20190108_mesh.off';
+% fileBase = './data/hog_reef/hog_reef_20190108_';
 
 % camFile  = './data/Crescent_simple_cameras.xml';
 % camVersion = 'v1.4';
@@ -19,10 +20,10 @@ addpath('~/Documents/MATLAB/Library/xml');
 % fileBase = './data/0441_simple_3';
 
 
-camFile = './data/0443_02122016_cameras.xml';
-camVersion = 'v1.2';
-meshFile = './data/0443_02122016_mesh.off';
-fileBase = './data/0443_02122016_';
+% camFile = './data/0443_02122016_cameras.xml';
+% camVersion = 'v1.2';
+% meshFile = './data/0443_02122016_mesh.off';
+% fileBase = './data/0443_02122016_';
 % 
 % camFile = './data/crescent_reef_refined_20190129/crescent_reef_refined_20190129_cameras.xml';
 % camVersion = 'v1.4';
