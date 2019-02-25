@@ -72,77 +72,25 @@ handles.curY = [];  %current y position in current image
 handles.ActiveFaceDepth = -5;       % plotted depth of active face - may need to very to make the active face clear in a plot and yet retain some indication of depth for remaining faces; a value of 0 to -5 has been worked so far
 handles.ActiveFaceScale = 5;   %factor by which to expand size of active face to make it more visible
 
+%load input data
+handles = load_mesh_data(handles);
 
-%load mesh
-fprintf(1,'Select mesh file in off format\n');
-[filenameMesh, pathname] = uigetfile({'*.off'}, 'Select mesh file in off format');
-fullnameMesh = fullfile(pathname, filenameMesh);
-[V, F] = readMesh_off(fullnameMesh);
-%axes(handles.axes3)
 handles.figure2 = figure;
-handles.F = F;
-handles.V = V;
-plotMesh(F, V, handles.curFace, handles);
-
-
-%load image file namesloadCam
-fprintf(1,'Select image list file\n');
-[filenameImg, pathname] = uigetfile({'*.txt'}, 'Select image list file');
-fullnameImg = fullfile(pathname, filenameImg);
-fid = fopen(fullnameImg);
-C = textscan(fid,'%s\n');
-handles.imgFiles = C{1}; % don't ask me why
-handles.imgFilePath = pathname;
+plotMesh(handles.F, handles.V, handles.curFace, handles);
+% 
 set(handles.listbox3,'String',cellstr(handles.imgFiles));
-
-%load test image to get image dimensions; assumes loadCamall images in data set
-%are the same size
+% 
+% %load test image to get image dimensions; assumes loadCamall images in data set
+% %are the same size
 I = imread(strcat(handles.imgFilePath, handles.imgFiles{1}));
 handles.xLim = size(I, 2);
 handles.yLim = size(I, 1);
-
-%load camera matrices file
-camVersion = 'v1.4';
-fprintf(1,'Select camera matrix file -.xml or processed .mat\n');
-[filenameCamMats, pathname] = uigetfile({'*.xml';'*.mat'}, 'Select camera matrix file');  %camera file in agisoft format
-fullnameCamMats = fullfile(pathname, filenameCamMats);
-[~,~,ext] = fileparts(filenameCamMats);
-if(strcmp(ext,'.xml'))
-  [Cam, pCamCalib ] = loadCameraData( fullnameCamMats, camVersion );
-elseif(strcmp(ext,'.mat'))
-   myVars = {'Cam','pCamCalib'};
-   load(fullnameCamMats, myVars{:});  %loads  'Cam','pCamCalib
-else
-    error('file type of camera matrix data not recognized\n');
-end
-
-handles.Cam = Cam;      %cell array of camera matrices
-handles.pCamCalib = pCamCalib;  %camera calibration structure
-
-%load mesh to image(camera) correspondenses
-fprintf(1,'Select FacesVisibleToCamerasData file\n');
-[filenameVis, pathname] = uigetfile({'*.mat'}, 'Select FacesVisibleToCamerasData file');
-fullnameVis = fullfile(pathname, filenameVis);
-load(fullnameVis);  %loads Fcenters (face centers of mesh), visibleFC (Faces x Cameras matrix indicating which mesh faces are visible in which cameras
-                % and imCoord_x, imCoord_y (Faces x Cameras cell array that contains image positions corresponding to a given face center);
-
-seenIdx = find(sum(visibleFC,2) ~= 0); %  faces that were not seen should be excluded from further analysis 
-nSeen = length(seenIdx);
-fprintf(1,'number seen %i\n', nSeen);
-handles.seenIdx  = seenIdx;
-a =  linspace(1, size(seenIdx,1), size(seenIdx,1));
-meshIDMap = containers.Map(seenIdx,a); %map to translate from standard mesh face id to "seen" mesh face id;
-handles.meshIDMap = meshIDMap;
-handles.visFCseen = visibleFC(seenIdx, :);
-handles.imgCoordseen_x = imCoord_x(seenIdx,:);
-handles.imgCoordseen_y = imCoord_y(seenIdx,:);
-handles.Fcentseen = Fcenters(seenIdx,:);
-handles.nVisFaces = nSeen;
+% 
 
 set(handles.figure1, 'WindowButtonDownFcn', {@getMousePositionOnImage, hObject});
 set(handles.figure1, 'Pointer', 'crosshair'); % Optional
 
-save('handles.mat','handles');
+%save('handles.mat','handles');
 % Update handles structure
 guidata(hObject, handles);
 
