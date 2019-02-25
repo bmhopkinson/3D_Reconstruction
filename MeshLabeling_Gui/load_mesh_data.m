@@ -12,7 +12,7 @@ if fid ==-1
     error(['File' infile_fullname 'not found or permission denied.']);
 end
 
-data_filenames = struct('mesh',[],'image_list',[],'image_path',[],'cameras',[],'faceVis',[]);
+data_filenames = struct('mesh',[],'image_list',[],'image_path',[],'cameras',[],'faceVis',[],'annotation_list',[]);
 
 while ~feof(fid)
     raw = fgetl(fid);
@@ -29,7 +29,9 @@ while ~feof(fid)
         case 'camera_file'
             data_filenames.cameras = sscanf(raw,'%*s\t%s');
         case 'faceVis_file'
-            data_filenames.faceVis = sscanf(raw,'%*s\t%s');    
+            data_filenames.faceVis = sscanf(raw,'%*s\t%s'); 
+        case 'annotation_list'
+            data_filenames.annotation_list = sscanf(raw,'%*s\t%s'); 
     end
 end
 
@@ -78,5 +80,10 @@ handles.imgCoordseen_x = imCoord_x(seenIdx,:);
 handles.imgCoordseen_y = imCoord_y(seenIdx,:);
 handles.Fcentseen = Fcenters(seenIdx,:);
 handles.nVisFaces = nSeen;
+
+%load annotation data
+fan = fopen(data_filenames.annotation_list,'r');
+D = textscan(fan,'%s\n');
+handles.ann_strings = D{1}; 
 
 end

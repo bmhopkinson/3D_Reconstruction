@@ -55,8 +55,6 @@ addpath(genpath('/home/cv-bhlab/Documents/MATLAB/Library/geom3d')); %reading and
 addpath(genpath('/home/cv-bhlab/Documents/MATLAB/Library/mesh_utils'));  %reading agisoft camera files, project points, etc
 % Choose default command line output for MeshLabeling_Gui_small
 handles.output = hObject;
-classData = struct('val',1);
-set(handles.popupmenu1,'UserData',classData);
 xypos = struct('x',0,'y',0);
 set(handles.axes1,'UserData',xypos);
 handles.classLabels =[];
@@ -75,10 +73,11 @@ handles.ActiveFaceScale = 5;   %factor by which to expand size of active face to
 %load input data
 handles = load_mesh_data(handles);
 
+%set Gui properties
 handles.figure2 = figure;
 plotMesh(handles.F, handles.V, handles.curFace, handles);
-% 
 set(handles.listbox3,'String',cellstr(handles.imgFiles));
+set(handles.popupmenu1,'String',handles.ann_strings);
 % 
 % %load test image to get image dimensions; assumes loadCamall images in data set
 % %are the same size
@@ -230,6 +229,18 @@ function pushbutton2_Callback(hObject, eventdata, handles)
 [filename, pathname] = uiputfile('*.txt','Save Annotation Data');
 fullname = fullfile(pathname,filename);
 fid = fopen(fullname, 'w');
+
+%write out annotation key
+fprintf(1,'size of handles.ann_strings');
+size(handles.ann_strings)
+n_ann_list = size(handles.ann_strings,1);
+for i = 1:n_ann_list
+    fprintf(fid,'%s\t%i\n',handles.ann_strings{i},i);
+end
+
+fprintf(fid,'\n###############\n\n');  %divider
+
+%write out annotation data
 classData = handles.classLabels;
 faces = handles.facesLabeled;
 xpos = handles.xpos;
