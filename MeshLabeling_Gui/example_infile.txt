@@ -1,0 +1,6 @@
+mesh_file	./0443/0443_02122016_mesh_1.off
+image_list	./0443/0443_02122016_1_image_list.txt
+image_path	./0443/
+camera_file	./0443/0443_02122016_faceVis_1.mat
+faceVis_file	./0443/0443_02122016_faceVis_1.mat
+annotation_list	sample_annotations.txt
