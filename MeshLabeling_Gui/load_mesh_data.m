@@ -1,18 +1,25 @@
-function handles = load_mesh_data(handles)
-%load input data needed for MeshLabling_Gui
+function handles = load_mesh_data(handles,varargin)
+%load input data needed for MeshLabling_Gui, varargin can hold path to
+%infile
 
 addpath(genpath('/home/cv-bhlab/Documents/MATLAB/Library/matGeom/matGeom/'));
 %load input data
-fprintf(1,'Select infile\n');
-[infile_name, pathname] = uigetfile({'*.txt'}, 'Select infile');
-infile_fullname = fullfile(pathname,infile_name);
+
+if(isempty(varargin))
+    fprintf(1,'Select infile\n');
+    [infile_name, pathname] = uigetfile({'*.txt'}, 'Select infile');
+    infile_fullname = fullfile(pathname,infile_name);
+else
+    infile_fullname = varargin{1};
+end
+
 fid = fopen(infile_fullname);
 
 if fid ==-1
     error(['File' infile_fullname 'not found or permission denied.']);
 end
 
-data_filenames = struct('mesh',[],'image_list',[],'image_path',[],'cameras',[],'faceVis',[],'annotation_list',[]);
+data_filenames = struct('mesh',[],'image_list',[],'image_path',[],'cameras',[],'faceVis',[],'annotation_list',[],'test_path',[], 'test_file',[]);
 
 while ~feof(fid)
     raw = fgetl(fid);
@@ -32,6 +39,10 @@ while ~feof(fid)
             data_filenames.faceVis = sscanf(raw,'%*s\t%s'); 
         case 'annotation_list'
             data_filenames.annotation_list = sscanf(raw,'%*s\t%s'); 
+        case 'test_path'
+            data_filenames.test_path = sscanf(raw,'%*s\t%s'); 
+        case 'test_file'
+            data_filenames.test_file = sscanf(raw,'%*s\t%s'); 
     end
 end
 
@@ -49,7 +60,7 @@ handles.imgFiles = C{1};
 handles.imgFilePath = data_filenames.image_path;
 
 %load camera data
-camVersion = 'v1.4';
+camVersion = 'v1.2';
 [~,~,ext] = fileparts(data_filenames.cameras);
 if(strcmp(ext,'.xml'))
   [Cam, pCamCalib ] = loadCameraData( data_filenames.cameras, camVersion );
@@ -85,5 +96,15 @@ handles.nVisFaces = nSeen;
 fan = fopen(data_filenames.annotation_list,'r');
 D = textscan(fan,'%s\n');
 handles.ann_strings = D{1}; 
+
+%load test data if being used
+handles.test_frac = -1;
+if(~isempty(data_filenames.test_file))
+   handles.test_path = data_filenames.test_path;
+   load(data_filenames.test_file); %loads test_data
+   handles.test_data = test_data;
+   handles.test_frac = 0.25;
+end
+
 
 end

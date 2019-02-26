@@ -1,6 +1,8 @@
-mesh_file	./0443/0443_02122016_mesh_1.off
-image_list	./0443/0443_02122016_1_image_list.txt
+mesh_file	./0443/0443_02122016_mesh.off
+image_list	./0443/0443_02122016_images.txt
 image_path	./0443/
-camera_file	./0443/0443_02122016_faceVis_1.mat
-faceVis_file	./0443/0443_02122016_faceVis_1.mat
-annotation_list	sample_annotations.txt
+camera_file	./0443/0443_02122016_cameras.xml
+faceVis_file	./0443/0443_02122016_faceVisSparse_Alt.mat
+annotation_list	LG_annotations.txt
+test_path	./test_data/
+test_file	./test_data/0443_test_data.mat

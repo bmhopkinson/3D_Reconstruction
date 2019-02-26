@@ -1,26 +1,26 @@
-function varargout = MeshLabeling_Gui_small(varargin)
-% MESHLABELING_GUI_SMALL MATLAB code for MeshLabeling_Gui_small.fig
-%      MESHLABELING_GUI_SMALL, by itself, creates a new MESHLABELING_GUI_SMALL or raises the existing
+function varargout = MeshLabeling_Gui(varargin)
+% MESHLABELING_GUI MATLAB code for MeshLabeling_Gui.fig
+%      MESHLABELING_GUI, by itself, creates a new MESHLABELING_GUI or raises the existing
 %      singleton*.
 %
-%      H = MESHLABELING_GUI_SMALL returns the handle to a new MESHLABELING_GUI_SMALL or the handle to
+%      H = MESHLABELING_GUI returns the handle to a new MESHLABELING_GUI or the handle to
 %      the existing singleton*.
 %
-%      MESHLABELING_GUI_SMALL('CALLBACK',hObject,eventData,handles,...) calls the local
-%      function named CALLBACK in MESHLABELING_GUI_SMALL.M with the given input arguments.
+%      MESHLABELING_GUI('CALLBACK',hObject,eventData,handles,...) calls the local
+%      function named CALLBACK in MESHLABELING_GUI.M with the given input arguments.
 %
-%      MESHLABELING_GUI_SMALL('Property','Value',...) creates a new MESHLABELING_GUI_SMALL or raises the
+%      MESHLABELING_GUI('Property','Value',...) creates a new MESHLABELING_GUI or raises the
 %      existing singleton*.  Starting from the left, property value pairs are
-%      applied to the GUI before MeshLabeling_Gui_small_OpeningFcn gets called.  An
+%      applied to the GUI before MeshLabeling_Gui_OpeningFcn gets called.  An
 %      unrecognized property name or invalid value makes property application
-%      stop.  All inputs are passed to MeshLabeling_Gui_small_OpeningFcn via varargin.
+%      stop.  All inputs are passed to MeshLabeling_Gui_OpeningFcn via varargin.
 %
 %      *See GUI Options on GUIDE's Tools menu.  Choose "GUI allows only one
 %      instance to run (singleton)".
 %
 % See also: GUIDE, GUIDATA, GUIHANDLES
 
-% Edit the above text to modify the response to help MeshLabeling_Gui_small
+% Edit the above text to modify the response to help MeshLabeling_Gui
 
 % Last Modified by GUIDE v2.5 08-Aug-2017 15:45:50
 
@@ -28,8 +28,8 @@ function varargout = MeshLabeling_Gui_small(varargin)
 gui_Singleton = 1;
 gui_State = struct('gui_Name',       mfilename, ...
                    'gui_Singleton',  gui_Singleton, ...
-                   'gui_OpeningFcn', @MeshLabeling_Gui_small_OpeningFcn, ...
-                   'gui_OutputFcn',  @MeshLabeling_Gui_small_OutputFcn, ...
+                   'gui_OpeningFcn', @MeshLabeling_Gui_OpeningFcn, ...
+                   'gui_OutputFcn',  @MeshLabeling_Gui_OutputFcn, ...
                    'gui_LayoutFcn',  [] , ...
                    'gui_Callback',   []);
 if nargin && ischar(varargin{1})
@@ -45,23 +45,25 @@ end
 
 
 % --- Executes just before MeshLabeling_Gui_small is made visible.
-function MeshLabeling_Gui_small_OpeningFcn(hObject, eventdata, handles, varargin)
+function MeshLabeling_Gui_OpeningFcn(hObject, eventdata, handles, varargin)
 % This function has no output args, see OutputFcn.
 % hObject    handle to figure
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
-% varargin   command line arguments to MeshLabeling_Gui_small (see VARARGIN)
+% varargin   command line arguments to MeshLabeling_Gui (see VARARGIN)
 addpath(genpath('/home/cv-bhlab/Documents/MATLAB/Library/geom3d')); %reading and displaying meshes
 addpath(genpath('/home/cv-bhlab/Documents/MATLAB/Library/mesh_utils'));  %reading agisoft camera files, project points, etc
-% Choose default command line output for MeshLabeling_Gui_small
+% Choose default command line output for MeshLabeling_Gui
 handles.output = hObject;
 xypos = struct('x',0,'y',0);
 set(handles.axes1,'UserData',xypos);
 handles.classLabels =[];
 handles.facesLabeled = [];
+handles.gtLabels = []; %ground truth labels
 handles.counter = 0;
 handles.curFace = [];  %active face; index of seen Faces, need to convert back to all faces for output
 handles.curImg = []; %active image, loaded into axes 1
+handles.curGT = -999; %current ground truth -999 = no ground truth
 handles.xpos = []; %track x, y positions in image locations corresponding to mesh faces
 handles.ypos = [];
 handles.correspondingImg = [];  %image coresponding to x, y positions 
@@ -93,12 +95,12 @@ set(handles.figure1, 'Pointer', 'crosshair'); % Optional
 % Update handles structure
 guidata(hObject, handles);
 
-% UIWAIT makes MeshLabeling_Gui_small wait for user response (see UIRESUME)
+% UIWAIT makes MeshLabeling_Gui wait for user response (see UIRESUME)
 % uiwait(handles.figure1);
 
 
 % --- Outputs from this function are returned to the command line.
-function varargout = MeshLabeling_Gui_small_OutputFcn(hObject, eventdata, handles) 
+function varargout = MeshLabeling_Gui_OutputFcn(hObject, eventdata, handles) 
 % varargout  cell array for returning output args (see VARARGOUT);
 % hObject    handle to figure
 % eventdata  reserved - to be defined in a future version of MATLAB
@@ -111,6 +113,12 @@ varargout{1} = handles.output;
 function getMousePositionOnImage(obj, eventdata, hObject)
 % 
  handles = guidata(hObject);
+ 
+ if(handles.curImg == -999)
+     fprintf(1,'image is not current, reload an image\n');
+     return;
+ end
+ 
  
  cursorPoint = get(handles.axes1, 'CurrentPoint');
  curX = cursorPoint(1,1);
@@ -145,6 +153,7 @@ function getMousePositionOnImage(obj, eventdata, hObject)
          handles.curFace = newFaceSeenIdx;  %set identified face to current face - indexed to seen faces only
          handles.curX = curX;
          handles.curY = curY;
+         handles.curGT = -999; %not a ground truth data point
 
          %update mesh plot
         V = handles.V;
@@ -153,7 +162,18 @@ function getMousePositionOnImage(obj, eventdata, hObject)
         plotMesh(F, V, handles.curFace, handles);
 
         %update panel 1
-        updatePanel1(handles.curFace, handles);
+            
+        [img_nums, x, y] = determine_patch_coords(newFaceSeenIdx, handles);
+        [patches, pts] = extract_patches(img_nums, handles.imgFilePath, handles.imgFiles,x,y);
+    
+        n_patches = size(patches,2);
+        for i = 1:n_patches
+          patches{i}= insertShape(patches{i}, 'Circle', [pts(i,:) 5],'LineWidth',3);  %format for location (3rd argument) is [x, y, radius]
+        end
+    
+    
+         updatePanel1(patches, handles); %update panel1
+
      end
  end
 
@@ -203,8 +223,14 @@ function pushbutton1_Callback(hObject, eventdata, handles)
 classData = get(handles.popupmenu1,'UserData');
 posData = get(handles.axes1,'UserData');
 handles.classLabels  = [handles.classLabels classData.val];
+handles.gtLabels = [handles.gtLabels handles.curGT];
 
-outFace = handles.seenIdx(handles.curFace); % map seen faces idx back to all faces index
+if(handles.curGT == -999) % not test data 
+   outFace = handles.seenIdx(handles.curFace); % map seen faces idx back to all faces index
+else 
+   outFace = handles.curFace;  %for test data, this is the original face id
+end
+
 handles.facesLabeled = [handles.facesLabeled outFace];
 handles.xpos = [handles.xpos handles.curX];
 handles.ypos = [handles.ypos handles.curY];
@@ -231,8 +257,6 @@ fullname = fullfile(pathname,filename);
 fid = fopen(fullname, 'w');
 
 %write out annotation key
-fprintf(1,'size of handles.ann_strings');
-size(handles.ann_strings)
 n_ann_list = size(handles.ann_strings,1);
 for i = 1:n_ann_list
     fprintf(fid,'%s\t%i\n',handles.ann_strings{i},i);
@@ -242,12 +266,13 @@ fprintf(fid,'\n###############\n\n');  %divider
 
 %write out annotation data
 classData = handles.classLabels;
+gtData = handles.gtLabels;
 faces = handles.facesLabeled;
 xpos = handles.xpos;
 ypos = handles.ypos;
 corImg = handles.correspondingImg;
 for i = 1:length(classData)
-    fprintf(fid, '%i\t%i\t%5.1f\t%5.1f\t%i\n',faces(i), classData(i), xpos(i), ypos(i), corImg(i));
+    fprintf(fid, '%i\t%i\t%i\t%5.1f\t%5.1f\t%i\n',faces(i), classData(i), gtData(i), xpos(i), ypos(i), corImg(i));
 end
 fclose(fid);
 
@@ -305,38 +330,74 @@ function pushbutton7_Callback(hObject, eventdata, handles)
 % hObject    handle to pushbutton7 (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
-rng('shuffle');
-z = rand();
-idx = ceil(handles.nVisFaces *z);
-handles.curFace = idx;
-updatePanel1(handles.curFace, handles); %update panel1
-[curImg, faceCoord] = selectCentralImg(handles.curFace, handles);
-handles.curImg = curImg;
-handles.curX = faceCoord(1);
-handles.curY = faceCoord(2);
+
+x_rand = rand();
+if x_rand < handles.test_frac  %test example or real data
+    n_test = size(handles.test_data,2);  
+    idx_test = ceil(n_test * rand());
+    
+    patches = {};
+    this_test_data = handles.test_data{1,idx_test};
+    pnames = this_test_data{5};
+    for i = 1:size(pnames,2)
+        patches{i}= imread(strcat(handles.test_path,pnames{i}));
+    end
+    fprintf(1,'test face\n');
+    updatePanel1(patches, handles);
+    
+    imgFileToOpen = strcat(handles.test_path,this_test_data{3});
+    pt = this_test_data{4};
+    handles.curX = pt(1);
+    handles.curY = pt(2);
+    handles.curGT = this_test_data{2};
+    handles.curFace = this_test_data{1};
+    handles.curImg = -999; %don't record
+    
+else  %real data
+    rng('shuffle');
+    z = rand();
+    idx = ceil(handles.nVisFaces *z);
+    handles.curFace = idx;
+    
+    [img_nums, x, y] = determine_patch_coords(idx, handles);
+    [patches, pts] = extract_patches(img_nums, handles.imgFilePath, handles.imgFiles,x,y);
+    
+    n_patches = size(patches,2);
+    for i = 1:n_patches
+        patches{i}= insertShape(patches{i}, 'Circle', [pts(i,:) 5],'LineWidth',3);  %format for location (3rd argument) is [x, y, radius]
+    end
+    
+    updatePanel1(patches, handles); %update panel1
+    [curImg, faceCoord] = selectCentralImg(handles.curFace, handles);
+    handles.curImg = curImg;
+    handles.curX = faceCoord(1);
+    handles.curY = faceCoord(2);
+    handles.curGT = -999; %not test data
+    imgFileToOpen = strcat(handles.imgFilePath, handles.imgFiles{handles.curImg});
+
+    %update mesh plot
+    V = handles.V;
+    F = handles.F;
+    plotMesh(F, V, handles.curFace, handles);
+    
+end
+
+
 %update axes1
-imgFileToOpen = strcat(handles.imgFilePath, handles.imgFiles{handles.curImg});
+
 I = imread(imgFileToOpen);
 set(handles.text5,'String',imgFileToOpen);
 axes(handles.axes1);
 hold off;
 imshow(I);
 hold on;
-plot(faceCoord(1), faceCoord(2),'ro','MarkerSize',7)
+plot(handles.curX, handles.curY,'ro','MarkerSize',7)
 handles.image = I;
 
 %update current position in Text box 2
 currpos = strcat('x: ',num2str(handles.curX,'%5.1f'),' y:',num2str(handles.curY,'%5.1f'));
 set(handles.text2,'String',currpos)
 
-
-%update mesh plot
-% figure(handles.figure2);
-V = handles.V;
-F = handles.F;
-%C = V(F(:,1),3);  %generally color faces by height, use first vertex in each face (each vertex in a face will be at more or less the same height) 
-%C(handles.seenIdx(idx)) = handles.ActiveFaceDepth;  %idx is only from visible faces - map back into all faces
-plotMesh(F, V, handles.curFace, handles);
 
 guidata(hObject, handles);
 
