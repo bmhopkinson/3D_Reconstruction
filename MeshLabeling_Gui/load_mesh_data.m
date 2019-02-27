@@ -60,10 +60,10 @@ handles.imgFiles = C{1};
 handles.imgFilePath = data_filenames.image_path;
 
 %load camera data
-camVersion = 'v1.2';
+
 [~,~,ext] = fileparts(data_filenames.cameras);
 if(strcmp(ext,'.xml'))
-  [Cam, pCamCalib ] = loadCameraData( data_filenames.cameras, camVersion );
+  [Cam, pCamCalib ] = loadCameraData( data_filenames.cameras);
 elseif(strcmp(ext,'.mat'))
    myVars = {'Cam','pCamCalib'};
    load(data_filenames.cameras, myVars{:});  %loads  'Cam','pCamCalib

@@ -1,6 +1,16 @@
-function [ pCamCalib, sensorID_map] = extractCalibrationData( camXML, version )
+function [ pCamCalib, sensorID_map] = extractCalibrationData( camXML )
 %gets sensor calibration data from agisoft xml camera file
 %addpath('/home/brian/Documents/MATLAB/Library/xml'); %needed for xml2struct function
+
+version_map = containers.Map('KeyType','char','ValueType','char');  %add values to the map as needed
+version_map('1.2.0') = 'v1.2';
+version_map('1.4.0') = 'v1.4';
+
+docinfo = camXML.getElementsByTagName('document');
+docinfo = docinfo.item(0); %should only be one document
+xml_version = char(docinfo.getAttribute('version'));
+version = version_map(xml_version);
+
 allSensors = camXML.getElementsByTagName('sensor'); 
 nSensors = allSensors.getLength;
 

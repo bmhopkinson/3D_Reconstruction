@@ -33,7 +33,7 @@ addpath('~/Documents/MATLAB/3D_Reconstruction/mesh_utils');
 SPLIT_MESH = 1;
 
 [V, F] = readMesh_off(meshFile);
-[Cam, pCamCalib] = loadCameraData(camFile,camVersion);
+[Cam, pCamCalib] = loadCameraData(camFile);
 
 if SPLIT_MESH == 1
     depth = 2;

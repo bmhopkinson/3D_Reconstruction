@@ -1,4 +1,4 @@
-function [ Cam, pCamCalib ] = loadCameraData( cameraFile, camVersion )
+function [ Cam, pCamCalib ] = loadCameraData( cameraFile )
 %load camera positions, calibrations, etc corresponding to current mesh
 %from camera file in agisoft format
 
@@ -7,7 +7,7 @@ function [ Cam, pCamCalib ] = loadCameraData( cameraFile, camVersion )
 camXML = xmlread(cameraFile);
 
 %calibration data
-[pCamCalib, sensorID_map] = extractCalibrationData(camXML, camVersion);
+[pCamCalib, sensorID_map] = extractCalibrationData(camXML);
 
 %check for reconstruction transform (e.g. metric scaling) 
 chunks = camXML.getElementsByTagName('chunk'); 
