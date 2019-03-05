@@ -51,8 +51,8 @@ function MeshLabeling_Gui_OpeningFcn(hObject, eventdata, handles, varargin)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
 % varargin   command line arguments to MeshLabeling_Gui (see VARARGIN)
-addpath(genpath('/home/cv-bhlab/Documents/MATLAB/Library/geom3d')); %reading and displaying meshes
-addpath(genpath('/home/cv-bhlab/Documents/MATLAB/Library/mesh_utils'));  %reading agisoft camera files, project points, etc
+addpath(genpath('/home/cv-bhlab/Documents/MATLAB/Library/matGeom/matGeom')); %reading and displaying meshes
+addpath(genpath('/home/cv-bhlab/Documents/MATLAB/3D_Reconstruction/mesh_utils'));  %reading agisoft camera files, project points, etc
 % Choose default command line output for MeshLabeling_Gui
 handles.output = hObject;
 xypos = struct('x',0,'y',0);
