@@ -22,7 +22,7 @@ function varargout = MeshLabeling_Gui(varargin)
 
 % Edit the above text to modify the response to help MeshLabeling_Gui
 
-% Last Modified by GUIDE v2.5 08-Aug-2017 15:45:50
+% Last Modified by GUIDE v2.5 05-Mar-2019 17:07:48
 
 % Begin initialization code - DO NOT EDIT
 gui_Singleton = 1;
@@ -445,3 +445,88 @@ function popupmenu1_ButtonDownFcn(hObject, eventdata, handles)
 % hObject    handle to popupmenu1 (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
+
+
+% --- Executes on button press in pushbutton8 - load annotation data for review.
+function pushbutton8_Callback(hObject, eventdata, handles)
+% hObject    handle to pushbutton8 (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+
+[review_file, pathname] = uigetfile({'*.txt'}, 'Select data to review');
+review_fullname = fullfile(pathname,review_file);
+
+fid = fopen(review_fullname,'r');
+IN_HEADER = 1;
+while(IN_HEADER)
+    line = fgetl(fid);
+    if(strcmp(line, '###############'))
+        IN_HEADER = 0; %exit
+    end
+end
+line = fgetl(fid); %discard one more blank line
+C = textscan(fid,'%d\t%d\t%d\t%f\t%f\t%d\n');
+handles.rev_anns    = C{2};
+faceids_raw = C{1};
+faceids = [];
+for i = 1:size(faceids_raw,1)
+    faceids(i) = handles.meshIDMap(faceids_raw(i));
+end
+handles.faceids_rev = faceids;
+handles.rev_idx = 0;
+
+fprintf(1,'done\n');
+guidata(hObject, handles);
+
+
+
+% --- Executes on button press in pushbutton9 - go to next item in review.
+function pushbutton9_Callback(hObject, eventdata, handles)
+% hObject    handle to pushbutton9 (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+
+rev_idx = handles.rev_idx + 1;
+handles.rev_idx = rev_idx;
+handles.curFace = handles.faceids_rev(rev_idx);
+    
+[img_nums, x, y] = determine_patch_coords(handles.curFace, handles);
+[patches, pts] = extract_patches(img_nums, handles.imgFilePath, handles.imgFiles,x,y);
+
+n_patches = size(patches,2);
+for i = 1:n_patches
+    patches{i}= insertShape(patches{i}, 'Circle', [pts(i,:) 5],'LineWidth',3);  %format for location (3rd argument) is [x, y, radius]
+end
+
+updatePanel1(patches, handles); %update panel1
+[curImg, faceCoord] = selectCentralImg(handles.curFace, handles);
+handles.curImg = curImg;
+handles.curX = faceCoord(1);
+handles.curY = faceCoord(2);
+handles.curGT = -999; %not test data
+imgFileToOpen = strcat(handles.imgFilePath, handles.imgFiles{handles.curImg});
+
+%update mesh plot
+V = handles.V;
+F = handles.F;
+plotMesh(F, V, handles.curFace, handles);
+
+%update axes1
+
+I = imread(imgFileToOpen);
+set(handles.text5,'String',imgFileToOpen);
+axes(handles.axes1);
+hold off;
+imshow(I);
+hold on;
+plot(handles.curX, handles.curY,'ro','MarkerSize',7)
+handles.image = I;
+
+%update current position in Text box 2
+currpos = strcat('x: ',num2str(handles.curX,'%5.1f'),' y:',num2str(handles.curY,'%5.1f'));
+set(handles.text2,'String',currpos)
+
+%update review annoation textbox
+set(handles.text8,'String',handles.ann_strings{handles.rev_anns(rev_idx)});
+
+guidata(hObject, handles);
