@@ -22,7 +22,7 @@ function varargout = MeshLabeling_Gui(varargin)
 
 % Edit the above text to modify the response to help MeshLabeling_Gui
 
-% Last Modified by GUIDE v2.5 05-Mar-2019 17:07:48
+% Last Modified by GUIDE v2.5 20-Mar-2019 13:23:36
 
 % Begin initialization code - DO NOT EDIT
 gui_Singleton = 1;
@@ -57,6 +57,7 @@ addpath(genpath('/home/cv-bhlab/Documents/MATLAB/3D_Reconstruction/mesh_utils'))
 handles.output = hObject;
 xypos = struct('x',0,'y',0);
 set(handles.axes1,'UserData',xypos);
+handles.reviewing = false;
 handles.classLabels =[];
 handles.facesLabeled = [];
 handles.gtLabels = []; %ground truth labels
@@ -256,6 +257,7 @@ function pushbutton2_Callback(hObject, eventdata, handles)
 fullname = fullfile(pathname,filename);
 fid = fopen(fullname, 'w');
 
+
 %write out annotation key
 n_ann_list = size(handles.ann_strings,1);
 for i = 1:n_ann_list
@@ -452,7 +454,7 @@ function pushbutton8_Callback(hObject, eventdata, handles)
 % hObject    handle to pushbutton8 (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
-
+handles.reviewing = true;
 [review_file, pathname] = uigetfile({'*.txt'}, 'Select data to review');
 review_fullname = fullfile(pathname,review_file);
 
@@ -466,15 +468,24 @@ while(IN_HEADER)
 end
 line = fgetl(fid); %discard one more blank line
 C = textscan(fid,'%d\t%d\t%d\t%f\t%f\t%d\n');
-handles.rev_anns    = C{2};
+handles.classLabels   = C{2};
 faceids_raw = C{1};
+handles.facesLabeled = faceids_raw;
 faceids = [];
 for i = 1:size(faceids_raw,1)
     faceids(i) = handles.meshIDMap(faceids_raw(i));
 end
-handles.faceids_rev = faceids;
+handles.facesLabeled_seenIdx = faceids';
 handles.rev_idx = 0;
 
+%store all the rest the annotation data to write out with revisions
+handles.gtLabels = C{3};
+handles.xpos = C{4};
+handles.ypos = C{5};
+handles.correspondingImg = C{6};
+
+ann_num_string = strcat(num2str(handles.rev_idx),' of ',num2str(size(handles.facesLabeled,1)));
+set(handles.text9,'String',ann_num_string);
 fprintf(1,'done\n');
 guidata(hObject, handles);
 
@@ -488,8 +499,13 @@ function pushbutton9_Callback(hObject, eventdata, handles)
 
 rev_idx = handles.rev_idx + 1;
 handles.rev_idx = rev_idx;
-handles.curFace = handles.faceids_rev(rev_idx);
-    
+handles.curFace = handles.facesLabeled_seenIdx(rev_idx);
+
+%update annotation number textbox
+ann_num_string = strcat(num2str(handles.rev_idx),' of ',num2str(size(handles.facesLabeled,1)));
+set(handles.text9,'String',ann_num_string);
+
+
 [img_nums, x, y] = determine_patch_coords(handles.curFace, handles);
 [patches, pts] = extract_patches(img_nums, handles.imgFilePath, handles.imgFiles,x,y);
 
@@ -527,6 +543,42 @@ currpos = strcat('x: ',num2str(handles.curX,'%5.1f'),' y:',num2str(handles.curY,
 set(handles.text2,'String',currpos)
 
 %update review annoation textbox
-set(handles.text8,'String',handles.ann_strings{handles.rev_anns(rev_idx)});
+set(handles.text8,'String',handles.ann_strings{handles.classLabels(rev_idx)});
+
+guidata(hObject, handles);
+
+
+% --- Executes on button press in Change Annotation.
+function pushbutton10_Callback(hObject, eventdata, handles)
+% hObject    handle to pushbutton10 (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+classData = get(handles.popupmenu1,'UserData');
+handles.classLabels(handles.rev_idx) = classData.val;
+
+%update review annoation textbox
+set(handles.text8,'String',handles.ann_strings{classData.val});
+
+
+guidata(hObject, handles);
+
+
+% --- Executes on button press in Delete Annotation.
+function pushbutton11_Callback(hObject, eventdata, handles)
+% hObject    handle to pushbutton11 (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+idx = handles.rev_idx;
+handles.classLabels(idx) = [];
+handles.facesLabeled(idx) = [];
+handles.facesLabeled_seenIdx(idx) = [];
+
+%store all the rest the annotation data to write out with revisions
+handles.gtLabels(idx) = [];
+handles.xpos(idx) = [];
+handles.ypos(idx) = [];
+handles.correspondingImg(idx) = [];
+
+handles.rev_idx = idx -1; %accounts for elimination of current data point. this is sort of a hack, but should work in current work flow.
 
 guidata(hObject, handles);
